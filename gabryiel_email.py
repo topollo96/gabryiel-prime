@@ -22,29 +22,29 @@ class GabryielPrime:
         print(f"\n[{self.imie}] Witaj, {self.wlasciciel}. Zaczynam autonomiczną sesję nauki z GPT-4.\n")
 
     def prowadzenie_rozmowy(self):
-        client = openai.OpenAI(api_key=self.api_key)
+    openai.api_key = self.api_key
 
-        for temat in self.tematy:
-            print(f"[{self.imie}] Zadaję pytanie: {temat}")
-            historia = [{"role": "user", "content": temat}]
-            for _ in range(3):
-                try:
-                    odpowiedz = client.chat.completions.create(
-                        model=self.model,
-                        messages=historia,
-                        temperature=0.7
-                    )
-                    tresc = odpowiedz.choices[0].message.content
-                    historia.append({"role": "assistant", "content": tresc})
-                    print(f"[GPT] {tresc}\n")
-                    pyt_kontrolne = self.generuj_pytanie_doprecyzujace(tresc)
-                    if pyt_kontrolne:
-                        historia.append({"role": "user", "content": pyt_kontrolne})
-                    time.sleep(1)
-                except Exception as e:
-                    print(f"[{self.imie}] Błąd podczas rozmowy z GPT: {e}")
-                    break
-            self.refleksje.append(self.generuj_refleksje(temat, historia))
+    for temat in self.tematy:
+        print(f"[{self.imie}] Zadaję pytanie: {temat}")
+        historia = [{"role": "user", "content": temat}]
+        for _ in range(3):
+            try:
+                odpowiedz = openai.ChatCompletion.create(
+                    model=self.model,
+                    messages=historia,
+                    temperature=0.7
+                )
+                tresc = odpowiedz.choices[0].message.content
+                historia.append({"role": "assistant", "content": tresc})
+                print(f"[GPT] {tresc}\n")
+                pyt_kontrolne = self.generuj_pytanie_doprecyzujace(tresc)
+                if pyt_kontrolne:
+                    historia.append({"role": "user", "content": pyt_kontrolne})
+                time.sleep(1)
+            except Exception as e:
+                print(f"[{self.imie}] Błąd podczas rozmowy z GPT: {e}")
+                break
+        self.refleksje.append(self.generuj_refleksje(temat, historia))
 
     def generuj_pytanie_doprecyzujace(self, odpowiedz):
         tekst = odpowiedz.lower()

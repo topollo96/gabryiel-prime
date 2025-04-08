@@ -30,21 +30,21 @@ class GabryielPrime:
             for _ in range(3):
                 try:
                     odpowiedz = openai.ChatCompletion.create(
-                    model=self.model,
-                    messages=historia,
-                    temperature=0.7
-                )
-                tresc = odpowiedz.choices[0].message.content
-                historia.append({"role": "assistant", "content": tresc})
-                print(f"[GPT] {tresc}\n")
-                pyt_kontrolne = self.generuj_pytanie_doprecyzujace(tresc)
-                if pyt_kontrolne:
-                    historia.append({"role": "user", "content": pyt_kontrolne})
-                time.sleep(1)
-            except Exception as e:
-                print(f"[{self.imie}] Błąd podczas rozmowy z GPT: {e}")
-                break
-        self.refleksje.append(self.generuj_refleksje(temat, historia))
+                        model=self.model,
+                        messages=historia,
+                        temperature=0.7
+                    )
+                    tresc = odpowiedz.choices[0].message.content
+                    historia.append({"role": "assistant", "content": tresc})
+                    print(f"[GPT] {tresc}\n")
+                    pyt_kontrolne = self.generuj_pytanie_doprecyzujace(tresc)
+                    if pyt_kontrolne:
+                        historia.append({"role": "user", "content": pyt_kontrolne})
+                    time.sleep(1)
+                except Exception as e:
+                    print(f"[{self.imie}] Błąd podczas rozmowy z GPT: {e}")
+                    break
+            self.refleksje.append(self.generuj_refleksje(temat, historia))
 
     def generuj_pytanie_doprecyzujace(self, odpowiedz):
         tekst = odpowiedz.lower()

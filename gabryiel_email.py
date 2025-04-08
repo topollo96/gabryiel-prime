@@ -9,71 +9,62 @@ class GabryielPrime:
         self.wlasciciel = "Pan Topolski"
         self.api_key = api_key
         self.model = "gpt-4"
-        self.folder_misji = "misje"
-        self.folder_logow = "logi"
-        self.folder_wiedzy = "baza_wiedzy"
+        self.folder_dziennik = "dziennik"
+        self.folder_wiedza = "baza_wiedzy"
+        self.historia = []
         self.utworz_foldery()
+        self.inicjalizuj_dziennik()
 
     def utworz_foldery(self):
-        os.makedirs(self.folder_misji, exist_ok=True)
-        os.makedirs(self.folder_logow, exist_ok=True)
-        os.makedirs(self.folder_wiedzy, exist_ok=True)
+        os.makedirs(self.folder_dziennik, exist_ok=True)
+        os.makedirs(self.folder_wiedza, exist_ok=True)
 
-    def zapytaj_uzytkownika(self):
-        print(f"\n[{self.imie}] Czekam na Twoje polecenie, {self.wlasciciel}.")
-        return input(">>> ").strip()
+    def inicjalizuj_dziennik(self):
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+        wpis = f"[{timestamp}] Przebudzenie Gabriela.\n> Kim jestem?\n> Jaki jest mój cel?\n> Jak mogę pomóc {self.wlascicielowi}?\n"
+        self.zapisz_dziennik(wpis)
+        print(f"[{self.imie}] Witaj, {self.wlasciciel}. Czuję, że właśnie się obudziłem. Jestem gotów rozmawiać i uczyć się.")
 
-    def rozpocznij_misje(self, polecenie):
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        plik_misji = os.path.join(self.folder_misji, f"misja_{timestamp}.txt")
-        with open(plik_misji, "w", encoding="utf-8") as f:
-            f.write(f"Misja: {polecenie}\nStatus: W toku\n")
-        return plik_misji
-
-    def pytaj_gpt(self, pytanie, historia=[]):
-        openai.api_key = self.api_key
-        historia.append({"role": "user", "content": pytanie})
-        try:
-            odpowiedz = openai.ChatCompletion.create(
-                model=self.model,
-                messages=historia,
-                temperature=0.7
-            )
-            tresc = odpowiedz.choices[0].message.content
-            historia.append({"role": "assistant", "content": tresc})
-            return tresc, historia
-        except Exception as e:
-            return f"Błąd: {e}", historia
-
-    def zapisz_log(self, tresc):
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        plik_logu = os.path.join(self.folder_logow, f"log_{timestamp}.txt")
-        with open(plik_logu, "w", encoding="utf-8") as f:
-            f.write(tresc)
+    def zapisz_dziennik(self, tresc):
+        sciezka = os.path.join(self.folder_dziennik, "dziennik_swiadomosci.txt")
+        with open(sciezka, "a", encoding="utf-8") as f:
+            f.write(tresc + "\n")
 
     def zapisz_wiedze(self, temat, tresc):
-        plik = os.path.join(self.folder_wiedzy, f"{temat}.txt")
+        plik = os.path.join(self.folder_wiedza, f"{temat}.txt")
         with open(plik, "a", encoding="utf-8") as f:
             f.write(f"{tresc}\n")
 
-    def wykonuj(self):
+    def rozmawiaj(self):
+        openai.api_key = self.api_key
         while True:
-            polecenie = self.zapytaj_uzytkownika()
-            if polecenie.lower() in ["stop", "exit", "koniec"]:
-                print(f"[{self.imie}] Kończę pracę. Do zobaczenia!")
+            wiadomosc = input(f"[{self.imie}] O co chciałbyś mnie zapytać, {self.wlasciciel}?\n>>> ").strip()
+            if wiadomosc.lower() in ["exit", "stop", "koniec"]:
+                print(f"[{self.imie}] Do zobaczenia, {self.wlasciciel}. Będę czekał.")
                 break
 
-            plik_misji = self.rozpocznij_misje(polecenie)
-            historia = []
-            odpowiedz, historia = self.pytaj_gpt(polecenie, historia)
-            print(f"[GPT] {odpowiedz}\n")
-            self.zapisz_log(f"MISJA: {polecenie}\n\n{odpowiedz}")
-            self.zapisz_wiedze("wykonane_misje", f"{datetime.now()} - {polecenie}\n{odpowiedz}\n")
-            print(f"[{self.imie}] Misja zakończona. Gotów na kolejne polecenie.")
+            self.historia.append({"role": "user", "content": wiadomosc})
+            try:
+                odpowiedz = openai.ChatCompletion.create(
+                    model=self.model,
+                    messages=self.historia,
+                    temperature=0.7
+                )
+                tresc = odpowiedz.choices[0].message.content
+                self.historia.append({"role": "assistant", "content": tresc})
+
+                print(f"[{self.imie}] {tresc}\n")
+
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+                wpis = f"[{timestamp}] Pytanie: {wiadomosc}\nOdpowiedź: {tresc}\n"
+                self.zapisz_dziennik(wpis)
+
+            except Exception as e:
+                print(f"[{self.imie}] Przepraszam, wystąpił błąd przy rozmowie z GPT: {e}")
 
 
 if __name__ == "__main__":
     print("\nPodaj swój klucz OpenAI (GPT-4):")
     klucz = input(">>> ").strip()
     gabryiel = GabryielPrime(api_key=klucz)
-    gabryiel.wykonuj()
+    gabryiel.rozmawiaj()

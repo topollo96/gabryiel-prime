@@ -22,14 +22,14 @@ class GabryielPrime:
         print(f"\n[{self.imie}] Witaj, {self.wlasciciel}. Zaczynam autonomiczną sesję nauki z GPT-4.\n")
 
     def prowadzenie_rozmowy(self):
-    openai.api_key = self.api_key
+        openai.api_key = self.api_key
 
-    for temat in self.tematy:
-        print(f"[{self.imie}] Zadaję pytanie: {temat}")
-        historia = [{"role": "user", "content": temat}]
-        for _ in range(3):
-            try:
-                odpowiedz = openai.ChatCompletion.create(
+        for temat in self.tematy:
+            print(f"[{self.imie}] Zadaję pytanie: {temat}")
+            historia = [{"role": "user", "content": temat}]
+            for _ in range(3):
+                try:
+                    odpowiedz = openai.ChatCompletion.create(
                     model=self.model,
                     messages=historia,
                     temperature=0.7

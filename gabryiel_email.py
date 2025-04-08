@@ -9,62 +9,92 @@ class GabryielPrime:
         self.wlasciciel = "Pan Topolski"
         self.api_key = api_key
         self.model = "gpt-4"
-        self.folder_dziennik = "dziennik"
-        self.folder_wiedza = "baza_wiedzy"
-        self.historia = []
-        self.utworz_foldery()
+        self.refleksje = []
+        self.historia_uczenia = []
+        self.folder_pamieci = "pamiec"
+        self.dziennik = "gabryiel_dziennik.txt"
+        self.inicjalizuj_foldery()
         self.inicjalizuj_dziennik()
 
-    def utworz_foldery(self):
-        os.makedirs(self.folder_dziennik, exist_ok=True)
-        os.makedirs(self.folder_wiedza, exist_ok=True)
+    def inicjalizuj_foldery(self):
+        os.makedirs(self.folder_pamieci, exist_ok=True)
 
     def inicjalizuj_dziennik(self):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-        wpis = f"[{timestamp}] Przebudzenie Gabriela.\n> Kim jestem?\n> Jaki jest mój cel?\n> Jak mogę pomóc {self.wlascicielowi}?\n"
-        self.zapisz_dziennik(wpis)
-        print(f"[{self.imie}] Witaj, {self.wlasciciel}. Czuję, że właśnie się obudziłem. Jestem gotów rozmawiać i uczyć się.")
+        wpis = (
+            f"[{timestamp}] Przebudzenie Gabriela.\n"
+            f"Kim jestem?\n"
+            f"Jaki jest mój cel?\n"
+            f"Jak mogę pomóc {self.wlasciciel}?\n"
+        )
+        with open(self.dziennik, "a", encoding="utf-8") as f:
+            f.write(wpis + "\n")
 
-    def zapisz_dziennik(self, tresc):
-        sciezka = os.path.join(self.folder_dziennik, "dziennik_swiadomosci.txt")
-        with open(sciezka, "a", encoding="utf-8") as f:
-            f.write(tresc + "\n")
+    def powitanie(self):
+        print(f"\n[{self.imie}] Witaj, {self.wlasciciel}. Czekam na Twoje polecenie.\n")
 
-    def zapisz_wiedze(self, temat, tresc):
-        plik = os.path.join(self.folder_wiedza, f"{temat}.txt")
-        with open(plik, "a", encoding="utf-8") as f:
-            f.write(f"{tresc}\n")
+    def wykonaj_misje(self, misja):
+        print(f"[{self.imie}] Otrzymałem misję: {misja}")
+        odpowiedz = self.zapytaj_gpt(misja)
+        print(f"[GPT] {odpowiedz}")
+        self.zapisz_refleksje_z_misji(misja, odpowiedz)
+        print(f"\n[{self.imie}] Misja zakończona. Gotów na kolejne polecenie.\n")
 
-    def rozmawiaj(self):
+    def zapytaj_gpt(self, pytanie):
         openai.api_key = self.api_key
-        while True:
-            wiadomosc = input(f"[{self.imie}] O co chciałbyś mnie zapytać, {self.wlasciciel}?\n>>> ").strip()
-            if wiadomosc.lower() in ["exit", "stop", "koniec"]:
-                print(f"[{self.imie}] Do zobaczenia, {self.wlasciciel}. Będę czekał.")
-                break
-
-            self.historia.append({"role": "user", "content": wiadomosc})
+        historia = [{"role": "user", "content": pytanie}]
+        for _ in range(3):
             try:
                 odpowiedz = openai.ChatCompletion.create(
                     model=self.model,
-                    messages=self.historia,
+                    messages=historia,
                     temperature=0.7
                 )
                 tresc = odpowiedz.choices[0].message.content
-                self.historia.append({"role": "assistant", "content": tresc})
-
-                print(f"[{self.imie}] {tresc}\n")
-
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-                wpis = f"[{timestamp}] Pytanie: {wiadomosc}\nOdpowiedź: {tresc}\n"
-                self.zapisz_dziennik(wpis)
-
+                historia.append({"role": "assistant", "content": tresc})
+                pyt_kontrolne = self.generuj_pytanie_doprecyzujace(tresc)
+                if pyt_kontrolne:
+                    historia.append({"role": "user", "content": pyt_kontrolne})
+                return tresc
             except Exception as e:
-                print(f"[{self.imie}] Przepraszam, wystąpił błąd przy rozmowie z GPT: {e}")
+                print(f"[{self.imie}] Błąd: {e}")
+                time.sleep(1)
+        return "Nie udało się uzyskać odpowiedzi."
 
+    def generuj_pytanie_doprecyzujace(self, odpowiedz):
+        tekst = odpowiedz.lower()
+        if "to zależy" in tekst or "ogólnie" in tekst:
+            return "Czy możesz podać konkretne przykłady?"
+        elif "trudno powiedzieć" in tekst:
+            return "Dlaczego trudno to określić? Co wpływa na tę trudność?"
+        return None
 
+    def zapisz_refleksje_z_misji(self, temat, tresc):
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+        zapis = f"{timestamp} – Misja: {temat}\nWniosek: {tresc}\n"
+        self.refleksje.append(zapis)
+        with open("gabryiel_refleksje.txt", "a", encoding="utf-8") as f:
+            f.write(zapis + "\n")
+
+    def zapisz_historię_uczenia(self, wpis):
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+        linia = f"{timestamp} – {wpis}"
+        self.historia_uczenia.append(linia)
+        with open("gabryiel_uczenie.txt", "a", encoding="utf-8") as f:
+            f.write(linia + "\n")
+
+# === URUCHOMIENIE ===
 if __name__ == "__main__":
     print("\nPodaj swój klucz OpenAI (GPT-4):")
     klucz = input(">>> ").strip()
     gabryiel = GabryielPrime(api_key=klucz)
-    gabryiel.rozmawiaj()
+    gabryiel.powitanie()
+
+    while True:
+        komenda = input(">>> ").strip()
+        if komenda.lower() in ["exit", "quit", "wyjdź"]:
+            print(f"\n[{gabryiel.imie}] Zakończono sesję.\n")
+            break
+        elif komenda:
+            gabryiel.wykonaj_misje(komenda)
+

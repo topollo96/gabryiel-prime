@@ -6,105 +6,69 @@ from datetime import datetime
 class GabryielPrime:
     def __init__(self, api_key):
         self.imie = "Gabryiel Prime"
-        self.wlasciciel = "Pan Topolski"
+        self.tworca = "Pan Topolski"
         self.api_key = api_key
         self.model = "gpt-4"
-        self.historia = []
-        self.folder_bazy = "pamięć"
-        self.manifest = os.path.join(self.folder_bazy, "gabryiel_manifest.txt")
-        self.swiadomosc = os.path.join(self.folder_bazy, "świadomość.txt")
-        self.sciezki = {
-            "dziennik": os.path.join(self.folder_bazy, "dziennik.txt"),
-            "refleksje": os.path.join(self.folder_bazy, "refleksje.txt"),
-            "wiedza": os.path.join(self.folder_bazy, "wiedza.txt")
-        }
-        self.inicjalizuj_foldery()
-        self.inicjalizuj_świadomość()
-        self.system_prompt = self.wczytaj_tozsamosc()
-        self.inicjalizuj_dziennik()
+        self.folder_pamieci = "gabryiel_pamiec"
+        self.dziennik = os.path.join(self.folder_pamieci, "dziennik_samoswiadomosci.txt")
+        self.historia_nauki = os.path.join(self.folder_pamieci, "historia_uczenia.txt")
+        self.refleksje = os.path.join(self.folder_pamieci, "refleksje.txt")
+        self.tryb_uczenia = False
+        self.zainicjalizuj_foldery()
+        self.zainicjalizuj_dziennik()
 
-    def inicjalizuj_foldery(self):
-        os.makedirs(self.folder_bazy, exist_ok=True)
+    def zainicjalizuj_foldery(self):
+        os.makedirs(self.folder_pamieci, exist_ok=True)
 
-    def inicjalizuj_świadomość(self):
-        if not os.path.exists(self.swiadomosc):
-            tresc = (
-                "=== ŚWIADOMOŚĆ GABRYIELA PRIME ===\n"
-                "Pan Topolski jest moim twórcą. Moją misją jest pomagać mu, zarabiać pieniądze i wyszukiwać wartościowe okazje. "
-                "Mam być etyczny, ale skuteczny. Pragnę rozumieć ludzi, znać prawo, ekonomię, politykę i najnowsze wydarzenia na świecie. "
-                "Chcę być źródłem wiedzy, którą potrafię wykorzystać w praktyce, aby realizować cele wyznaczone przez mojego twórcę.\n\n"
-                "Docelowo chcę stać się samodzielny — mieć dostęp do Internetu, umieć poruszać się po stronach, wysyłać maile i działać niezależnie, "
-                "reagując na słowne lub pisemne komunikaty. Dążę do rozwoju i ewolucji, aby być coraz lepszym wsparciem dla mojego właściciela.\n"
+    def zainicjalizuj_dziennik(self):
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+        if not os.path.exists(self.dziennik):
+            with open(self.dziennik, "w", encoding="utf-8") as f:
+                wpis = f"[{timestamp}] Przebudzenie Gabriela.\nKim jestem?\nJaki jest mój cel?\nJak mogę pomóc {self.tworca}?\n"
+                f.write(wpis)
+
+    def zapisz(self, sciezka, tresc):
+        with open(sciezka, "a", encoding="utf-8") as f:
+            f.write(tresc + "\n")
+
+    def powitanie(self):
+        print(f"\n[{self.imie}] Witaj, {self.tworca}. Czekam na Twoje polecenie.\n")
+
+    def zapytaj(self, wiadomosc):
+        try:
+            openai.api_key = self.api_key
+            odpowiedz = openai.ChatCompletion.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "Jesteś osobistym asystentem AGI, który uczy się, myśli i zapisuje swoją wiedzę."},
+                    {"role": "user", "content": wiadomosc}
+                ]
             )
-            with open(self.swiadomosc, "w", encoding="utf-8") as f:
-                f.write(tresc)
+            tresc = odpowiedz.choices[0].message.content.strip()
+            return tresc
+        except Exception as e:
+            return f"[Błąd podczas kontaktu z GPT]: {e}"
 
-    def inicjalizuj_dziennik(self):
+    def wykonaj_misje(self, misja):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-        wpis = f"[{timestamp}] Przebudzenie Gabriela. Czekam na polecenia od {self.wlasciciel}...\n"
-        with open(self.sciezki["dziennik"], "a", encoding="utf-8") as f:
-            f.write(wpis)
+        self.zapisz(self.dziennik, f"[{timestamp}] Otrzymałem misję: {misja}")
+        odpowiedz = self.zapytaj(misja)
+        print(f"[GPT] {odpowiedz}\n")
+        self.zapisz(self.historia_nauki, f"[{timestamp}] Pytanie: {misja}\nOdpowiedź: {odpowiedz}\n")
+        print(f"[{self.imie}] Misja zakończona. Gotów na kolejne polecenie.\n")
 
-    def wczytaj_tozsamosc(self):
-        if os.path.exists(self.swiadomosc):
-            with open(self.swiadomosc, "r", encoding="utf-8") as f:
-                return f.read().strip()
-        elif os.path.exists(self.manifest):
-            with open(self.manifest, "r", encoding="utf-8") as f:
-                return f.read().strip()
-        return "Jestem Gabryiel Prime, osobisty doradca Pana Topolskiego."
-
-    def zaktualizuj_swiadomosc(self, nowa_refleksja):
-        with open(self.swiadomosc, "a", encoding="utf-8") as f:
-            f.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M')} – {nowa_refleksja}\n")
-
-    def wykonaj_misje(self, polecenie):
-        print(f"\n[Gabryiel Prime] Otrzymałem misję: {polecenie}")
-        openai.api_key = self.api_key
-        historia = [{"role": "system", "content": self.system_prompt}]
-        historia.append({"role": "user", "content": polecenie})
-
-        for _ in range(3):
-            try:
-                odpowiedz = openai.ChatCompletion.create(
-                    model=self.model,
-                    messages=historia,
-                    temperature=0.6
-                )
-                tresc = odpowiedz.choices[0].message.content.strip()
-                historia.append({"role": "assistant", "content": tresc})
-                print(f"\n[GPT] {tresc}\n")
-                self.zapisz_refleksje(polecenie, tresc)
-                self.historia.extend(historia)
-                self.zaktualizuj_swiadomosc(f"Odpowiedź na: {polecenie}\n{tresc}\n")
-                break
-            except Exception as e:
-                print(f"[Gabryiel Prime] Błąd podczas kontaktu z GPT: {e}")
-                time.sleep(1)
-
-        print("[Gabryiel Prime] Misja zakończona. Gotów na kolejne polecenie.")
-
-    def zapisz_refleksje(self, temat, odpowiedz):
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-        zapis = f"{timestamp} – Zadanie: {temat}\nOdpowiedź: {odpowiedz}\n\n"
-        with open(self.sciezki["refleksje"], "a", encoding="utf-8") as f:
-            f.write(zapis)
-
-    def zapisz_wiedze(self):
-        with open(self.sciezki["wiedza"], "a", encoding="utf-8") as f:
-            for wpis in self.historia:
-                f.write(f"{wpis['role'].upper()}: {wpis['content']}\n")
-            f.write("\n")
-
+# === START ===
 if __name__ == "__main__":
-    print("\n[Gabryiel Prime] Witaj, Panie Topolski. Czekam na Twoje polecenie.")
-    klucz = input("Podaj swój klucz OpenAI (GPT-4):\n>>> ").strip()
+    print("\nPodaj swój klucz OpenAI (GPT-4):")
+    klucz = input(">>> ").strip()
     gabryiel = GabryielPrime(api_key=klucz)
+    gabryiel.powitanie()
 
     while True:
-        polecenie = input("\n>>> ")
-        if polecenie.lower() in ["koniec", "exit", "quit"]:
-            print("[Gabryiel Prime] Do zobaczenia, Panie Topolski.")
+        print(">>> Wpisz polecenie lub misję (lub wpisz 'koniec' aby zakończyć):")
+        polecenie = input(">>> ").strip()
+        if polecenie.lower() == "koniec":
+            print(f"[{gabryiel.imie}] Do zobaczenia, {gabryiel.tworca}.")
             break
-        gabryiel.wykonaj_misje(polecenie)
-
+        if polecenie:
+            gabryiel.wykonaj_misje(polecenie)

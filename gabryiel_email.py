@@ -50,6 +50,15 @@ class PromotorGabryiela:
 
         print("[Promotor] Proces inicjalnej nauki zakończony. Gotowy do dalszego rozwoju.")
 
+    def rozmowa_interaktywna(self):
+        print("[Promotor] Tryb interaktywny aktywny. Zadaj pytanie lub wpisz 'exit'.")
+        while True:
+            user_input = input("Ty >>> ").strip()
+            if user_input.lower() == "exit":
+                break
+            odpowiedz = self.zapytaj_gpt(user_input)
+            print(f"[GPT dla Gabriela] {odpowiedz}\n")
+            self.zapisz_do_pamieci(user_input.replace(" ", "_")[:30], odpowiedz)
 
 # Uruchomienie
 if __name__ == "__main__":
@@ -57,4 +66,4 @@ if __name__ == "__main__":
     klucz = input(">>> ").strip()
     promotor = PromotorGabryiela(api_key=klucz)
     promotor.ucz_gabriela()
-
+    promotor.rozmowa_interaktywna()
